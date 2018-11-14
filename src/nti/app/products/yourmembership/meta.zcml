@@ -1,0 +1,10 @@
+<configure	xmlns="http://namespaces.zope.org/zope"
+			xmlns:meta="http://namespaces.zope.org/meta">
+
+	<meta:directives namespace="http://nextthought.com/ntp/yourmembership">
+		<meta:directive	name="registerYourMembershipLogonSettings"
+						schema=".zcml.IRegisterYourMembershipLogonSettings"
+						handler=".zcml.registerYourMembershipLogonSettings" />
+	</meta:directives>
+
+</configure>
