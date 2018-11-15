@@ -47,3 +47,34 @@ class YourMembershipUserCreatedEvent(ObjectEvent):
         super(YourMembershipUserCreatedEvent, self).__init__(obj)
         self.request = request
 
+
+class YourMembershipException(Exception):
+    """
+    A generic your membership API exception.
+    """
+
+
+class YourMembershipSessionException(YourMembershipException):
+    """
+    A your membership API error when fetching a session.
+    """
+
+
+class YourMembershipAuthTokenException(YourMembershipException):
+    """
+    A your membership API error when fetching an auth token.
+    """
+
+
+class YourMembershipUserInfoException(YourMembershipException):
+    """
+    An exception indicating we received an error when fetching YourMembership
+    user info.
+    """
+
+
+class YourMembershipUserInfoNotFoundException(YourMembershipUserInfoException):
+    """
+    An exception indicating we received a user info response but no user info
+    data.
+    """
