@@ -37,6 +37,7 @@ from nti.app.products.yourmembership.interfaces import IYourMembershipLogonSetti
 from nti.app.products.yourmembership.interfaces import YourMembershipSessionException
 from nti.app.products.yourmembership.interfaces import YourMembershipUserCreatedEvent
 from nti.app.products.yourmembership.interfaces import YourMembershipUserInfoException
+from nti.app.products.yourmembership.interfaces import YourMembershipAuthTokenException
 
 from nti.app.products.yourmembership.utils import set_user_yourmembership_id
 from nti.app.products.yourmembership.utils import get_user_for_yourmembership_id
@@ -207,7 +208,7 @@ def get_call_id():
     return str(uuid.uuid4())
 
 
-def _parse_auth_token_reponse(xml_response):
+def _parse_auth_token_response(xml_response):
     """
     Parse the given session response.
 
@@ -219,6 +220,8 @@ def _parse_auth_token_reponse(xml_response):
     </Auth.CreateToken>
     </YourMembership_Response>
     """
+    # Hack so the xml parser can parse the returned url; find a better way
+    xml_response = xml_response.replace('&', '&amp;')
     doc = BeautifulSoup(xml_response, 'lxml-xml')
     err_code = doc.find('ErrCode')
     err_code = err_code and err_code.text
@@ -229,21 +232,21 @@ def _parse_auth_token_reponse(xml_response):
         msg = msg and msg.text
         logger.warning('Exception while fetching YourMembership auth token (code=%s) (%s)',
                        err_code, msg or 'None')
-        raise YourMembershipSessionException(msg)
+        raise YourMembershipAuthTokenException(msg)
 
-    auth_token = doc.find('SessionID')
+    auth_token = doc.find('AuthToken')
     auth_token = auth_token and auth_token.text
     if not auth_token:
         logger.warning('Auth token not returned (%s)',
                        xml_response)
-        raise YourMembershipSessionException('YourMembership auth token not found')
+        raise YourMembershipAuthTokenException('YourMembership auth token not found')
 
     return_url = doc.find('GoToUrl')
     return_url = return_url and return_url.text
     if not return_url:
         logger.warning('GoToUrl not returned (%s)',
                        xml_response)
-        raise YourMembershipSessionException('YourMembership GoToUrl not found')
+        raise YourMembershipAuthTokenException('YourMembership GoToUrl not found')
     return return_url
 
 
@@ -265,7 +268,7 @@ def get_auth_token(request, logon_settings, session_id, return_url):
                 _return_url(request, 'failure'),
                 error=_('Invalid response while getting auth token.'))
     try:
-        return _parse_auth_token_reponse(response.text)
+        return _parse_auth_token_response(response.text)
     except YourMembershipException:
         return _create_failure_response(
                 request,

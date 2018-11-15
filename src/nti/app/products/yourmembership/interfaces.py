@@ -22,7 +22,7 @@ from nti.schema.field import ValidTextLine as TextLine
 
 class IYourMembershipUser(interface.Interface):
     """
-    Marker interface for a user created via ATS IMIS.
+    Marker interface for a user created via YourMembership.
     """
 
 

@@ -37,5 +37,5 @@ class IRegisterYourMembershipLogonSettings(interface.Interface):
 def registerYourMembershipLogonSettings(_context, api_endpoint, api_key):
     factory = functools.partial(YourMembershipLogonSettings,
                                 api_endpoint=text_(api_endpoint),
-                                api_keygit=text_(api_key))
+                                api_key=text_(api_key))
     utility(_context, provides=IYourMembershipLogonSettings, factory=factory)
