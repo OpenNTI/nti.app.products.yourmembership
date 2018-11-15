@@ -28,8 +28,7 @@ logger = __import__('logging').getLogger(__name__)
 
 def set_user_yourmembership_id(user, yourmembership_id, website_id, request):
     """
-    Set the given ATS IMIS identifiers on the user and marks
-    the user as a :class:`IATSIMISUser`.
+    Set the given YourMembership identity for a user.
     """
     if not yourmembership_id or not website_id:
         raise_http_error(request,
