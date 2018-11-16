@@ -12,27 +12,69 @@ from __future__ import absolute_import
 
 from zope import interface
 
-from zope.annotation.interfaces import IAttributeAnnotatable
+from zope.interface import Attribute
 
-from zope.container.constraints import contains
+from zope.interface.interfaces import ObjectEvent
+from zope.interface.interfaces import IObjectEvent
 
-from zope.container.interfaces import IContained
-from zope.container.interfaces import IContainer
-
-from nti.base.interfaces import ICreated
-from nti.base.interfaces import ILastModified
-
-from nti.coremetadata.interfaces import IUser
-from nti.coremetadata.interfaces import IShouldHaveTraversablePath
-
-from nti.schema.field import Int
-from nti.schema.field import Bool
-from nti.schema.field import Number
-from nti.schema.field import Object
-from nti.schema.field import HTTPURL
-from nti.schema.field import ValidText
-from nti.schema.field import ListOrTuple
-from nti.schema.field import ValidDatetime
-from nti.schema.field import DecodingValidTextLine as ValidTextLine
+from nti.schema.field import ValidTextLine as TextLine
 
 
+class IYourMembershipUser(interface.Interface):
+    """
+    Marker interface for a user created via YourMembership.
+    """
+
+
+class IYourMembershipLogonSettings(interface.Interface):
+
+    api_endpoint = TextLine(title=u"The yourmembership API url", required=True)
+
+    api_key = TextLine(title=u"The yourmembership api key", required=True)
+
+
+class IYourMembershipUserCreatedEvent(IObjectEvent):
+    """
+    Fired after an Google user has been created
+    """
+    request = Attribute(u"Request")
+
+
+@interface.implementer(IYourMembershipUserCreatedEvent)
+class YourMembershipUserCreatedEvent(ObjectEvent):
+
+    def __init__(self, obj, request=None):
+        super(YourMembershipUserCreatedEvent, self).__init__(obj)
+        self.request = request
+
+
+class YourMembershipException(Exception):
+    """
+    A generic your membership API exception.
+    """
+
+
+class YourMembershipSessionException(YourMembershipException):
+    """
+    A your membership API error when fetching a session.
+    """
+
+
+class YourMembershipAuthTokenException(YourMembershipException):
+    """
+    A your membership API error when fetching an auth token.
+    """
+
+
+class YourMembershipUserInfoException(YourMembershipException):
+    """
+    An exception indicating we received an error when fetching YourMembership
+    user info.
+    """
+
+
+class YourMembershipUserInfoNotFoundException(YourMembershipUserInfoException):
+    """
+    An exception indicating we received a user info response but no user info
+    data.
+    """
