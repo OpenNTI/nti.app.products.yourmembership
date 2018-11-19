@@ -178,7 +178,7 @@ def _parse_profile_response(xml_response):
     </Member.Profile.GetMini>
     </YourMembership_Response>
     """
-    doc = BeautifulSoup(xml_response)
+    doc = BeautifulSoup(xml_response, 'lxml')
 
     def _get_val(field):
         field_val = doc.find(field)
@@ -224,7 +224,7 @@ def _parse_auth_token_response(xml_response):
     </Auth.CreateToken>
     </YourMembership_Response>
     """
-    doc = BeautifulSoup(xml_response)
+    doc = BeautifulSoup(xml_response, 'lxml')
     err_code = doc.find('errcode')
     err_code = err_code and err_code.text
 
@@ -290,7 +290,7 @@ def _parse_session_response(xml_response):
     </Session.Create>
     </YourMembership_Response>
     """
-    doc = BeautifulSoup(xml_response)
+    doc = BeautifulSoup(xml_response, 'lxml')
     err_code = doc.find('errcode')
     err_code = err_code and err_code.text
 
@@ -370,7 +370,7 @@ def yourmembership_auth(request, success=None, failure=None, state=None):
 def _return_url(request, url_type='success'):
     if url_type in request.params:
         return request.params.get(url_type)
-    return request.session.get('your_membership.' + url_type)
+    return request.session.get('yourmembership.' + url_type)
 
 
 @view_config(name=LOGON_YOURMEMBERSHIP,
