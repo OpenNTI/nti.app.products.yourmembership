@@ -22,7 +22,7 @@ ZCML_STRING = """
 <configure  xmlns="http://namespaces.zope.org/zope"
             xmlns:i18n="http://namespaces.zope.org/i18n"
             xmlns:zcml="http://namespaces.zope.org/zcml"
-            xmlns:ats="http://nextthought.com/ntp/yourmembership">
+            xmlns:your="http://nextthought.com/ntp/yourmembership">
 
     <include package="zope.component" file="meta.zcml" />
     <include package="zope.security" file="meta.zcml" />
@@ -30,7 +30,7 @@ ZCML_STRING = """
     <include package="." file="meta.zcml" />
 
     <configure>
-        <ats:registerYourMembershipLogonSettings api_endpoint="http://yourmembership.api"
+        <your:registerYourMembershipLogonSettings api_endpoint="http://yourmembership.api"
                                                  api_key="1111111111111" />
     </configure>
 </configure>

@@ -79,6 +79,7 @@ YourMembershipUserInfo = namedtuple('YourMembershipUserInfo',
 
 #: formatted str: api_key, call_id
 CREATE_SESSION_XML = """
+                    <?xml version="1.0" encoding="utf-8" ?>
                     <YourMembership>
                         <Version>2.30</Version>
                         <ApiKey>%s</ApiKey>
@@ -89,6 +90,7 @@ CREATE_SESSION_XML = """
 
 #: formatted str: api_key, call_id, session_id, return_url
 CREATE_TOKEN_XML = """
+                   <?xml version="1.0" encoding="utf-8" ?>
                    <YourMembership>
                        <Version>2.30</Version>
                        <ApiKey>%s</ApiKey>
@@ -102,6 +104,7 @@ CREATE_TOKEN_XML = """
 
 #: formatted str: api_key, call_id, session_id
 GET_PROFILE_XML = """
+                  <?xml version="1.0" encoding="utf-8" ?>
                   <YourMembership>
                     <Version>2.30</Version>
                     <ApiKey>%s</ApiKey>
@@ -175,17 +178,17 @@ def _parse_profile_response(xml_response):
     </Member.Profile.GetMini>
     </YourMembership_Response>
     """
-    doc = BeautifulSoup(xml_response, 'lxml-xml')
+    doc = BeautifulSoup(xml_response, 'lxml')
 
     def _get_val(field):
         field_val = doc.find(field)
         return field_val and field_val.text
 
-    first_name = _get_val('FirstName')
-    last_name = _get_val('LastName')
-    email = _get_val('EmailAddr')
-    yourmembership_id = _get_val('ID')
-    website_id = _get_val('WebsiteID')
+    first_name = _get_val('firstname')
+    last_name = _get_val('lastname')
+    email = _get_val('emailaddr')
+    yourmembership_id = _get_val('id')
+    website_id = _get_val('websiteid')
     result = YourMembershipUserInfo(yourmembership_id, website_id,
                                     first_name, last_name,
                                     email)
@@ -204,8 +207,9 @@ def _lookup_user(user_info):
 def get_call_id():
     """
     Each your membership requires a unique id.
+    25 character limit.
     """
-    return str(uuid.uuid4())
+    return str(uuid.uuid4().time_low)
 
 
 def _parse_auth_token_response(xml_response):
@@ -220,28 +224,26 @@ def _parse_auth_token_response(xml_response):
     </Auth.CreateToken>
     </YourMembership_Response>
     """
-    # Hack so the xml parser can parse the returned url; find a better way
-    xml_response = xml_response.replace('&', '&amp;')
-    doc = BeautifulSoup(xml_response, 'lxml-xml')
-    err_code = doc.find('ErrCode')
+    doc = BeautifulSoup(xml_response, 'lxml')
+    err_code = doc.find('errcode')
     err_code = err_code and err_code.text
 
     if err_code and err_code != '0':
         # Error condition
-        msg = doc.find('ErrDesc')
+        msg = doc.find('errdesc')
         msg = msg and msg.text
         logger.warning('Exception while fetching YourMembership auth token (code=%s) (%s)',
                        err_code, msg or 'None')
         raise YourMembershipAuthTokenException(msg)
 
-    auth_token = doc.find('AuthToken')
+    auth_token = doc.find('authtoken')
     auth_token = auth_token and auth_token.text
     if not auth_token:
         logger.warning('Auth token not returned (%s)',
                        xml_response)
         raise YourMembershipAuthTokenException('YourMembership auth token not found')
 
-    return_url = doc.find('GoToUrl')
+    return_url = doc.find('gotourl')
     return_url = return_url and return_url.text
     if not return_url:
         logger.warning('GoToUrl not returned (%s)',
@@ -258,7 +260,7 @@ def get_auth_token(request, logon_settings, session_id, return_url):
                                          get_call_id(),
                                          session_id,
                                          return_url)
-    headers = {'Content-Type': 'application/xml'}
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     response = requests.post(logon_settings.api_endpoint,
                              auth_token_xml,
                              headers=headers)
@@ -288,19 +290,19 @@ def _parse_session_response(xml_response):
     </Session.Create>
     </YourMembership_Response>
     """
-    doc = BeautifulSoup(xml_response, 'lxml-xml')
-    err_code = doc.find('ErrCode')
+    doc = BeautifulSoup(xml_response, 'lxml')
+    err_code = doc.find('errcode')
     err_code = err_code and err_code.text
 
     if err_code and err_code != '0':
         # Error condition
-        msg = doc.find('ErrDesc')
+        msg = doc.find('errdesc')
         msg = msg and msg.text
         logger.warning('Exception while fetching YourMembership session (code=%s) (%s)',
                        err_code, msg or 'None')
         raise YourMembershipSessionException(msg)
 
-    session_id = doc.find('SessionID')
+    session_id = doc.find('sessionid')
     session_id = session_id and session_id.text
     if not session_id:
         logger.warning('Session id not returned (%s)',
@@ -311,7 +313,7 @@ def _parse_session_response(xml_response):
 
 def create_session(request, logon_settings):
     session_xml = CREATE_SESSION_XML % (logon_settings.api_key, get_call_id())
-    headers = {'Content-Type': 'application/xml'}
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
     response = requests.post(logon_settings.api_endpoint,
                              session_xml,
                              headers=headers)
@@ -346,7 +348,7 @@ def yourmembership_auth(request, success=None, failure=None, state=None):
     session_id = create_session(request, logon_settings)
     request.session['yourmembership.session_id'] = session_id
     state = state or hashlib.sha256(os.urandom(1024)).hexdigest()
-    params = redirect_yourmembership2_params(request, state)
+    params = redirect_yourmembership2_params(state)
     auth2_url = redirect_yourmembership2_uri(request)
 
     target = get_auth_token(request, logon_settings, session_id, auth2_url)
@@ -368,7 +370,7 @@ def yourmembership_auth(request, success=None, failure=None, state=None):
 def _return_url(request, url_type='success'):
     if url_type in request.params:
         return request.params.get(url_type)
-    return request.session.get('your_membership.' + url_type)
+    return request.session.get('yourmembership.' + url_type)
 
 
 @view_config(name=LOGON_YOURMEMBERSHIP,
@@ -381,24 +383,14 @@ def yourmembership_auth2(request):
     Successfully authenticated
     """
     params = request.params
-
-    # FIXME?
-    # check for errors
-    if 'error' in params or 'errorCode' in params:
-        error = params.get('error') or params.get('errorCode')
-        logger.warn('YourMembership error during auth (%s)', error)
-        return _create_failure_response(request,
-                                        _return_url(request, 'failure'),
-                                        error=error)
-
     # Confirm anti-forgery state token
-    if not request.session.get('your_membership.state'):
+    if not request.session.get('yourmembership.state'):
         return _create_failure_response(request,
                                         _return_url(request, 'failure'),
                                         error=_(u'Missing state.'))
     if 'state' in params:
         params_state = params.get('state')
-        session_state = request.session.get('your_membership.state')
+        session_state = request.session.get('yourmembership.state')
         if params_state != session_state:
             return _create_failure_response(request,
                                             _return_url(request, 'failure'),
@@ -415,7 +407,7 @@ def yourmembership_auth2(request):
         profile_xml = GET_PROFILE_MINI_XML % (logon_settings.api_key,
                                               get_call_id(),
                                               session_id)
-        headers = {'Content-Type': 'application/xml'}
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
         response = requests.post(logon_settings.api_endpoint,
                                  profile_xml,
                                  headers=headers)
