@@ -200,8 +200,7 @@ def _parse_profile_response(xml_response):
 
 
 def _lookup_user(user_info):
-    return get_user_for_yourmembership_id(user_info.yourmembership_id,
-                                          user_info.website_id)
+    return get_user_for_yourmembership_id(user_info.yourmembership_id)
 
 
 def get_call_id():
@@ -436,8 +435,7 @@ def yourmembership_auth2(request):
                                                idurl=None,
                                                iface=None,
                                                user_factory=User.create_user)
-            set_user_yourmembership_id(user, user_info.yourmembership_id,
-                                       user_info.website_id, request)
+            set_user_yourmembership_id(user, user_info.yourmembership_id, request)
             force_email_verification(user)  # trusted source
             notify(YourMembershipUserCreatedEvent(user, request))
             request.environ['nti.request_had_transaction_side_effects'] = 'True'
