@@ -25,29 +25,28 @@ from nti.identifiers.utils import get_user_for_external_id
 
 logger = __import__('logging').getLogger(__name__)
 
+PROVIDER_ID = "yourmembership"
 
-def set_user_yourmembership_id(user, yourmembership_id, website_id, request):
+
+def set_user_yourmembership_id(user, yourmembership_id, request):
     """
     Set the given YourMembership identity for a user.
     """
-    if not yourmembership_id or not website_id:
+    if not yourmembership_id:
         raise_http_error(request,
-                         _(u"Must provide yourmembership_id and website_id."),
+                         _(u"Must provide yourmembership_id."),
                          u'NoYourMembershipIdsGiven')
     interface.alsoProvides(user, IYourMembershipUser)
 
     identity_container = IUserExternalIdentityContainer(user)
-    # pylint: disable=too-many-function-args
-    provider_id = 'yourmembership-%s' % website_id
-    identity_container.add_external_mapping(provider_id, yourmembership_id)
+    identity_container.add_external_mapping(PROVIDER_ID, yourmembership_id)
     logger.info("Setting Yourmembership ID for user (%s) (%s/%s)",
-                user.username, provider_id, yourmembership_id)
+                user.username, PROVIDER_ID, yourmembership_id)
     notify(ObjectModifiedFromExternalEvent(user))
 
 
-def get_user_for_yourmembership_id(yourmembership_id, website_id):
+def get_user_for_yourmembership_id(yourmembership_id):
     """
-    Find any user associated with the given YourMembership id and website id.
+    Find any user associated with the given YourMembership id.
     """
-    provider_id = 'yourmembership-%s' % website_id
-    return get_user_for_external_id(provider_id, yourmembership_id)
+    return get_user_for_external_id(PROVIDER_ID, yourmembership_id)
