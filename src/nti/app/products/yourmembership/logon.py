@@ -30,6 +30,8 @@ from zope import component
 
 from zope.event import notify
 
+from nti.app.authentication import user_can_login
+
 from nti.app.products.yourmembership import MessageFactory as _
 
 from nti.app.products.yourmembership.interfaces import YourMembershipException
@@ -440,6 +442,11 @@ def yourmembership_auth2(request):
             notify(YourMembershipUserCreatedEvent(user, request))
             request.environ['nti.request_had_transaction_side_effects'] = 'True'
 
+        if not user_can_login(user):
+            return _create_failure_response(
+                    request,
+                    _return_url(request, 'failure'),
+                    error=_('User cannot login.'))
         response = _create_success_response(request,
                                             userid=user.username,
                                             success=_return_url(request),)
